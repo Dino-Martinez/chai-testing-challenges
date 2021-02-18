@@ -20,14 +20,13 @@ router.get('/:messageId', (req, res) => {
 
 /** Route to add a new message. */
 router.post('/', (req, res) => {
-  let message = new Message(req.body)
+  const message = new Message(req.body)
   message
     .save()
     .then((message) => {
       return User.findById(message.author)
     })
     .then((user) => {
-      // console.log(user)
       user.messages.unshift(message)
       return user.save()
     })

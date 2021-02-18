@@ -29,39 +29,60 @@ after((done) => {
 
 describe('Message API endpoints', () => {
   beforeEach((done) => {
-    const sampleMessage = new Message({
+    const sampleUser = new User({
+      username: 'myuser',
+      password: 'mypassword',
+      _id: AUTHOR_ID,
+    })
+    const sampleMessage = {
       title: 'beast',
       body: 'feast',
       author: AUTHOR_ID,
       _id: SAMPLE_ID,
-    })
-    const anotherSampleMessage = new Message({
+    }
+    const anotherSampleMessage = {
       title: 'beast 2',
       body: 'feast 3',
       author: AUTHOR_ID,
-    })
+    }
 
-    sampleMessage
+    sampleUser
       .save()
+      .then((user) => {
+        return agent
+          .post('/messages')
+          .set('content-type', 'application/x-www-form-urlencoded')
+          .send(sampleMessage)
+      })
       .then(() => {
-        return anotherSampleMessage.save()
+        return agent
+          .post('/messages')
+          .set('content-type', 'application/x-www-form-urlencoded')
+          .send(anotherSampleMessage)
+      })
+      .then(() => {
+        done()
+      })
+      .catch((err) => {
+        console.log(err)
+      })
+  })
+
+  afterEach((done) => {
+    Message.deleteMany({ title: { $ne: '' } })
+      .then(() => {
+        return User.deleteMany({ username: { $ne: '' } })
       })
       .then(() => {
         done()
       })
   })
 
-  afterEach((done) => {
-    Message.deleteMany({ title: { $ne: '' } }).then(() => {
-      done()
-    })
-  })
-
   it('should post a new message', (done) => {
     const message = {
       title: 'beast 2',
       body: 'feast 2',
-      author: '60188f0e9ca4ac47c54aaaff',
+      author: AUTHOR_ID,
     }
     agent
       .post('/messages')
@@ -132,6 +153,11 @@ describe('Message API endpoints', () => {
         return Message.find({})
       })
       .then((messages) => {
+        expect(messages).with.lengthOf(1)
+        return User.findById(AUTHOR_ID)
+      })
+      .then((user) => {
+        const messages = user.messages
         expect(messages).with.lengthOf(1)
         done()
       })
